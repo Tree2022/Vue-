@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="X-UA-Compatible"
+      content="IE=edge"
+    />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <title>Vue响应式</title>
+  </head>
+  <body>
+    <!-- <h1>Vue响应式</h1> -->
+  </body>
+  <script>
+    let data = {
+      a: 1,
+      b: 2,
+      friend: {
+        name: '小夏',
+      },
+      colors: ['green', 'red', 'blue'],
+    }
+    const oldArrayProto = Array.prototype
+    const newArrayProto = Object.create(oldArrayProto)
+    console.log(oldArrayProto)
+    console.log(newArrayProto)
+    //重写数组方法
+    ;['push', 'pop', 'shift', 'splice'].forEach(
+      methodName => {
+        newArrayProto[methodName] = function () {
+          console.log('更新视图')
+          oldArrayProto[methodName].call(
+            this,
+            ...arguments
+          )
+        }
+      }
+    )
+    console.log(newArrayProto)
+
+    //让数据变成响应式
+    observer(data)
+    function observer(target) {
+      //判断传入的对象是否为 引用数据类型
+      if (typeof target !== 'object' || target === null) {
+        return target
+      }
+      if (Array.isArray(target)) {
+        target.__proto__ = newArrayProto
+      }
+      //  defineReactive 每个属性为响应式
+      for (let key in target) {
+        defineReactive(target, key, target[key])
+      }
+    }
+
+    function defineReactive(target, key, value) {
+      observer(value) //如果value是个对象 继续observer
+      Object.defineProperty(target, key, {
+        get() {
+          return value
+        },
+        set(newValue) {
+          observer(newValue) // 赋值的是个对象 再去observer
+          if (value !== newValue) {
+            value = newValue
+            console.log('更新视图')
+          }
+        },
+      })
+    }
+    //新增属性 和删除属性 defineProperty不能实现 ， 使用Vue.delete 和 Vue.set 去实现
+    console.log(data.colors.push)
+  </script>
+</html>
